@@ -1,5 +1,4 @@
 """Django settings for the project."""
-import dj_database_url
 from environs import Env
 import os
 from pathlib import Path
@@ -29,6 +28,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'debug_toolbar',
     'accounts.apps.AccountsConfig',
+    'django_celery_beat',
 ]
 
 MIDDLEWARE = [
@@ -65,7 +65,16 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'project.wsgi.application'
 
-DATABASES = {"default": env.dj_db_url("DB_URL")}
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        'NAME': env.str('DB_NAME'),
+        'USER': env.str('DB_USER'),
+        'PASSWORD': env.str('DB_PASS'),
+        'HOST': env.str('DB_HOST'),
+        'PORT': env('DB_PORT'),
+    }
+}
 
 # Password validation
 # https://docs.djangoproject.com/en/4.0/ref/settings/#auth-password-validators
@@ -107,20 +116,23 @@ STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'templates/static'),
 ]
 
-# Default primary key field type
-# https://docs.djangoproject.com/en/4.0/ref/settings/#default-auto-field
-
-DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-
 AUTH_USER_MODEL = 'accounts.User'
 
 if DEBUG:
     INTERNAL_IPS = ALLOWED_HOSTS
 
-# EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-# EMAIL_HOST = env.str('EMAIL_HOST')
-# EMAIL_PORT = env('EMAIL_PORT')
-# EMAIL_USE_SSL = env.bool('EMAIL_USE_SSL')
-# EMAIL_HOST_PASSWORD = env.str('EMAIL_HOST_PASSWORD')
-# EMAIL_HOST_USER = env.str('EMAIL_HOST_USER')
-# DEFAULT_FROM_EMAIL = env.str('DEFAULT_FROM_EMAIL')
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = env.str('EMAIL_HOST')
+EMAIL_PORT = env('EMAIL_PORT')
+EMAIL_USE_SSL = env.bool('EMAIL_USE_SSL')
+EMAIL_HOST_PASSWORD = env.str('EMAIL_HOST_PASSWORD')
+EMAIL_HOST_USER = env.str('EMAIL_HOST_USER')
+DEFAULT_FROM_EMAIL = env.str('DEFAULT_FROM_EMAIL')
+
+# Настройки Redis
+REDIS_HOST = env.str('REDIS_HOST')
+REDIS_PORT = env('REDIS_PORT')
+
+# Настройки Celery
+CELERY_BROKER_URL = f'redis://{REDIS_HOST}:{REDIS_PORT}/0'
+CELERY_RESULT_BACKEND = f'redis://{REDIS_HOST}:{REDIS_PORT}/0'
