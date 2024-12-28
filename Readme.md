@@ -13,7 +13,7 @@
 Настройки для часовой зоны Мск.
 
     LANGUAGE_CODE = 'ru-RU'
-    TIME_ZONE = 'Europe/Moscow'
+    TIME_ZONE = 'UTC'
 
 ## Кастомная модель пользователя
 

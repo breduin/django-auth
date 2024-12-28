@@ -1,4 +1,5 @@
 """Django settings for the project."""
+from datetime import timedelta
 from environs import Env
 import os
 from pathlib import Path
@@ -16,20 +17,39 @@ DEBUG = env.bool('DEBUG')
 
 ALLOWED_HOSTS = env.list('ALLOWED_HOSTS')
 
-# Application definition
-
-INSTALLED_APPS = [
-    'jazzmin',    
+# Приложения Django
+DJANGO_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'debug_toolbar',
-    'accounts.apps.AccountsConfig',
-    'django_celery_beat',
 ]
+
+# Внешние библиотеки
+EXTERNAL_LIBS = [ 
+    'debug_toolbar',
+    'django_celery_beat',
+    'rest_framework',
+    'rest_framework.authtoken',
+    'rest_framework_simplejwt',
+    'djoser',
+]
+
+# Внешние библиотеки
+EXTERNAL_LIBS_MUST_BE_FIRST = [
+    'jazzmin',    
+]
+
+# Приложения самого проекта
+PROJECT_APPS = [
+    'accounts.apps.AccountsConfig',
+    'simple_auth.apps.SimpleAuthConfig',
+]
+
+INSTALLED_APPS = EXTERNAL_LIBS_MUST_BE_FIRST + DJANGO_APPS + EXTERNAL_LIBS + PROJECT_APPS
+
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -100,7 +120,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'ru-RU'
 
-TIME_ZONE = 'Europe/Moscow'
+TIME_ZONE = 'UTC'
 
 USE_I18N = True
 
@@ -121,7 +141,8 @@ AUTH_USER_MODEL = 'accounts.User'
 if DEBUG:
     INTERNAL_IPS = ALLOWED_HOSTS
 
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+# EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 EMAIL_HOST = env.str('EMAIL_HOST')
 EMAIL_PORT = env('EMAIL_PORT')
 EMAIL_USE_SSL = env.bool('EMAIL_USE_SSL')
@@ -136,3 +157,49 @@ REDIS_PORT = env('REDIS_PORT')
 # Настройки Celery
 CELERY_BROKER_URL = f'redis://{REDIS_HOST}:{REDIS_PORT}/0'
 CELERY_RESULT_BACKEND = f'redis://{REDIS_HOST}:{REDIS_PORT}/0'
+
+
+# Настройки REST_FRAMEWORK
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ],
+}
+
+# Настройки JWT
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(days=1),  # Время жизни access токена
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=5),    # Время жизни refresh токена
+    'ROTATE_REFRESH_TOKENS': False,                 # Поворот токенов при обновлении
+    'BLACKLIST_AFTER_ROTATION': True,               # Черный список токенов после поворота
+    'UPDATE_LAST_LOGIN': False,                     # Обновление времени последнего входа
+
+    'ALGORITHM': 'HS256',                           # Алгоритм шифрования
+    'SIGNING_KEY': SECRET_KEY,                      # Ключ подписи
+    'VERIFYING_KEY': None,                          # Ключ верификации
+    'AUDIENCE': None,                               # Аудитория
+    'ISSUER': None,                                 # Издатель
+
+    'AUTH_HEADER_TYPES': ('JWT',),                  # Тип заголовка авторизации
+    'AUTH_HEADER_NAME': 'HTTP_AUTHORIZATION',       # Имя заголовка авторизации
+    'USER_ID_FIELD': 'email',                       # Поле пользователя для идентификации
+    'USER_ID_CLAIM': 'email',                       # Утверждение пользователя для идентификации
+
+    'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),  # Классы токенов
+    'TOKEN_TYPE_CLAIM': 'token_type',               # Утверждение типа токена
+
+    'JTI_CLAIM': 'jti',                             # Утверждение JTI
+
+    'SLIDING_TOKEN_REFRESH_EXP_CLAIM': 'refresh_exp',  # Утверждение времени жизни скользящего токена
+    'SLIDING_TOKEN_LIFETIME': timedelta(minutes=5),    # Время жизни скользящего токена
+    'SLIDING_TOKEN_REFRESH_LIFETIME': timedelta(days=1),  # Время жизни обновления скользящего токена
+}
+
+
+# Настройки DJOSER
+DJOSER = {
+    'PASSWORD_RESET_CONFIRM_URL': 'password/reset/confirm/{uid}/{token}',
+    'USERNAME_RESET_CONFIRM_URL': 'username/reset/confirm/{uid}/{token}',
+    'ACTIVATION_URL': 'activate/{uid}/{token}',
+    'SEND_ACTIVATION_EMAIL': True,
+}
